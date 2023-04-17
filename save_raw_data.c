@@ -25,6 +25,13 @@ extern int
 
 extern short *p_data;
 
+/* Rolling log folder interval (number of days)
+ *
+ * This global variable is set from the configuration file */
+int rolling_log_interval;
+static int last_sec_of_log_rolling = 0;
+static char log_folder_name[12] = {'\0', };
+
 int save_raw_data(int ping_byou){
    int cal[6];
    int fd,ret,send_bytes;
@@ -36,7 +43,7 @@ int save_raw_data(int ping_byou){
       sec2date(ping_byou,cal);
       memset(path2file,0,sizeof(path2file));
       strcpy(path2file,record_media);
-      strcat(path2file,"data/");
+      strcat(path2file,log_folder_name);
       strcat(path2file,file_name);
       strcat(path2file,".raw");
 
@@ -99,4 +106,102 @@ void make_file_name(int ping_byou){
       strcat(file_name,day1);strcat(file_name,hour1);
       strcat(file_name,minute1);
       printf("file name=%s\x0d\x0a",file_name);
+}
+
+static int create_folder(char folder_name[])
+{
+      char  bf[40];
+      int   fd;
+
+      memset(bf, '\0', 40);
+      strcpy(bf, record_media);
+      strcat(bf, folder_name);
+
+      // Check if the folder name already exists.
+      // If not, then create it.
+      fd=open(bf, OptRead);
+      if (fd == -1) {
+          if (__mkdir(bf) != 0) {
+              return -1;
+          }
+          // mkdir OK
+          return 0;
+      }
+
+      close(fd);
+
+      // Folder already exists
+      return 1;
+}
+
+int roll_log_folder_name()
+{
+      int   present_sec, cal[6];
+      int   elapsed_sec_since_last_rolling;
+      char  log_folder_name_temp[12];
+      int   ret;
+
+      /* Get the present time */
+      present_sec = get_present_time();
+      sec2date(present_sec, cal);
+      printf("[roll_log_folder_name] present_time=  %4d %2d %2d  %2d:%02d:%02d\x0d\x0a",
+         cal[0],cal[1],cal[2],cal[3],cal[4],cal[5]);
+
+      /* Configuration validity check */
+      if ((rolling_log_interval <= 0) || (rolling_log_interval > 180)) {
+          printf("[roll_log_folder_name] 0 < rolling_log_interval value <= 180, but it is %d, \x0d\x0a",
+                 rolling_log_interval);
+          return -1;
+      }
+
+      /* If no log_folder_name, then it's the first call.
+       * Create new log folder */
+      if (log_folder_name[0] == '\0') {
+          // Folder name is 'YYYYMMDD'.
+          sprintf(log_folder_name_temp, "%4d%02d%02d/", cal[0],cal[1],cal[2]);
+
+          ret = create_folder(log_folder_name_temp);
+          if (ret == -1) {
+              printf("[roll_log_folder_name] Failed to create new folder, %s\x0d\x0a", log_folder_name_temp);
+              return -1;
+          }
+          else if (ret == 1)
+              printf("[roll_log_folder_name] The folder already exists(first), %s\x0d\x0a", log_folder_name_temp);
+          else
+              printf("[roll_log_folder_name] Succeed to create new folder (first), %s\x0d\x0a", log_folder_name_temp);
+
+          last_sec_of_log_rolling = present_sec;
+          strcpy(log_folder_name, log_folder_name_temp);
+
+          return 0;
+      }
+
+      elapsed_sec_since_last_rolling = present_sec - last_sec_of_log_rolling;
+      if (elapsed_sec_since_last_rolling < 0) {
+          printf("[roll_log_folder_name] elapsed_sec_since_last_rolling is less than zero\x0d\x0a");
+          elapsed_sec_since_last_rolling = 86400 * 5;
+      }
+
+
+      /* If elapsed seconds since the last rolling is greater than the rolling interval,
+       * then do the rolling. */
+      if (elapsed_sec_since_last_rolling >= (86400 * rolling_log_interval)) {
+          // Folder name is 'YYYYMMDD'.
+          sprintf(log_folder_name_temp, "%4d%02d%02d/", cal[0],cal[1],cal[2]);
+
+          ret = create_folder(log_folder_name_temp);
+          if (ret == -1) {
+              printf("[roll_log_folder_name] Failed to create new folder, %s\x0d\x0a", log_folder_name_temp);
+              return -1;
+          }
+          else if (ret == 1)
+              printf("[roll_log_folder_name] The folder already exists, %s\x0d\x0a", log_folder_name_temp);
+          else
+              printf("[roll_log_folder_name] Succeed to create new folder, %s\x0d\x0a", log_folder_name_temp);
+
+          last_sec_of_log_rolling = present_sec;
+          strcpy(log_folder_name, log_folder_name_temp);
+      }
+
+      return 0;
 }

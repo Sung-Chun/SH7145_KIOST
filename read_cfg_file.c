@@ -44,9 +44,14 @@ extern int
       start_time,             /* 実験開始時間                                 */
       end_time,               /* 実験終了時間                                 */
       burst_total_num,        /* バーストモードでの送信回数*/
-      burst_interval;         /* バースト間隔*/
+      burst_interval,         /* バースト間隔*/
+      rolling_log_interval;   /* Rolling log folder interval (number of days) */
 
 static char f[25][80],fin[80];
+
+/* Number of configurations
+ * Currently, it is fixed to 23. */
+const int NUM_CONFIGS = 23;
 
 /***** read_cfg_file **********************************************************/
 /* 2008.5.                                                                    */
@@ -66,7 +71,7 @@ int read_cfg_file(char *cfg_file){
          runlog(201);return(-1);
       }
       /* cfg fileには途中でスペース文字(時刻)があるので注意 */
-      for(i=0;i<22;++i){
+      for(i=0;i<NUM_CONFIGS;++i){
          fgets(fin,80,fp);
          printf("%s",fin);
          for(j=0;j<80;++j){      /* コメントと0d,0a文字を省く */
@@ -159,6 +164,8 @@ int read_cfg_file(char *cfg_file){
       i=date_time_set(fin,date1,time1,0);
       if(i!=0){runlog(225);error_no=225;goto error1;}
       end_time=date2sec(time1,date1);/* 大域変数 2000.1.1からの経過秒 */
+
+      rolling_log_interval=atoi(f[22]); /* number of days */
 
 
    #ifdef DEBUG

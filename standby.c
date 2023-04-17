@@ -66,6 +66,9 @@ void software_standby(int present_sec,int wakeup_sec){
       }
       printf("Enter software_standby\x0d\x0a");
 
+      /* Change the log folder name if rolling interval time elapsed. */
+      roll_log_folder_name();
+
       /* prepare entering to software standby mode */
       work=TCSR;
       TCSR_W = 0xa51e;  /* WDT */  
