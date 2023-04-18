@@ -145,12 +145,12 @@ int roll_log_folder_name()
       /* Get the present time */
       present_sec = get_present_time();
       sec2date(present_sec, cal);
-      printf("[roll_log_folder_name] present_time=  %4d %2d %2d  %2d:%02d:%02d\x0d\x0a",
+      printf("[FOLDER ROLLING] present_time=  %4d %2d %2d  %2d:%02d:%02d\x0d\x0a",
          cal[0],cal[1],cal[2],cal[3],cal[4],cal[5]);
 
       /* Configuration validity check */
       if ((rolling_log_interval <= 0) || (rolling_log_interval > 180)) {
-          printf("[roll_log_folder_name] 0 < rolling_log_interval value <= 180, but it is %d, \x0d\x0a",
+          printf("[FOLDER ROLLING] 0 < rolling_log_interval value <= 180, but it is %d, \x0d\x0a",
                  rolling_log_interval);
           return -1;
       }
@@ -163,13 +163,13 @@ int roll_log_folder_name()
 
           ret = create_folder(log_folder_name_temp);
           if (ret == -1) {
-              printf("[roll_log_folder_name] Failed to create new folder, %s\x0d\x0a", log_folder_name_temp);
+              printf("[FOLDER ROLLING] Failed to create new folder, %s\x0d\x0a", log_folder_name_temp);
               return -1;
           }
           else if (ret == 1)
-              printf("[roll_log_folder_name] The folder already exists(first), %s\x0d\x0a", log_folder_name_temp);
+              printf("[FOLDER ROLLING] Log folder already exists(first), %s\x0d\x0a", log_folder_name_temp);
           else
-              printf("[roll_log_folder_name] Succeed to create new folder (first), %s\x0d\x0a", log_folder_name_temp);
+              printf("[FOLDER ROLLING] Succeed to create new folder (first), %s\x0d\x0a", log_folder_name_temp);
 
           last_sec_of_log_rolling = present_sec;
           strcpy(log_folder_name, log_folder_name_temp);
@@ -178,27 +178,32 @@ int roll_log_folder_name()
       }
 
       elapsed_sec_since_last_rolling = present_sec - last_sec_of_log_rolling;
+      printf("[FOLDER ROLLING] elapsed sec %d\x0d\x0a", elapsed_sec_since_last_rolling);
+
       if (elapsed_sec_since_last_rolling < 0) {
-          printf("[roll_log_folder_name] elapsed_sec_since_last_rolling is less than zero\x0d\x0a");
+          printf("[FOLDER ROLLING] elapsed_sec_since_last_rolling is less than zero\x0d\x0a");
           elapsed_sec_since_last_rolling = 86400 * 5;
       }
 
+      printf("[FOLDER ROLLING] check elapse time interval=%d\x0d\x0a", rolling_log_interval);
 
       /* If elapsed seconds since the last rolling is greater than the rolling interval,
        * then do the rolling. */
       if (elapsed_sec_since_last_rolling >= (86400 * rolling_log_interval)) {
+          printf("[FOLDER ROLLING] Rolling log folder start\x0d\x0a");
+
           // Folder name is 'YYYYMMDD'.
           sprintf(log_folder_name_temp, "%4d%02d%02d", cal[0],cal[1],cal[2]);
 
           ret = create_folder(log_folder_name_temp);
           if (ret == -1) {
-              printf("[roll_log_folder_name] Failed to create new folder, %s\x0d\x0a", log_folder_name_temp);
+              printf("[FOLDER ROLLING] Failed to create new folder, %s\x0d\x0a", log_folder_name_temp);
               return -1;
           }
           else if (ret == 1)
-              printf("[roll_log_folder_name] The folder already exists, %s\x0d\x0a", log_folder_name_temp);
+              printf("[FOLDER ROLLING] Log folder already exists, %s\x0d\x0a", log_folder_name_temp);
           else
-              printf("[roll_log_folder_name] Succeed to create new folder, %s\x0d\x0a", log_folder_name_temp);
+              printf("[FOLDER ROLLING] Succeed to create new folder, %s\x0d\x0a", log_folder_name_temp);
 
           last_sec_of_log_rolling = present_sec;
           strcpy(log_folder_name, log_folder_name_temp);
