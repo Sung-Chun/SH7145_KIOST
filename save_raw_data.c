@@ -44,6 +44,7 @@ int save_raw_data(int ping_byou){
       memset(path2file,0,sizeof(path2file));
       strcpy(path2file,record_media);
       strcat(path2file,log_folder_name);
+      strcat(path2file,"/");
       strcat(path2file,file_name);
       strcat(path2file,".raw");
 
@@ -158,7 +159,7 @@ int roll_log_folder_name()
        * Create new log folder */
       if (log_folder_name[0] == '\0') {
           // Folder name is 'YYYYMMDD'.
-          sprintf(log_folder_name_temp, "%4d%02d%02d/", cal[0],cal[1],cal[2]);
+          sprintf(log_folder_name_temp, "%4d%02d%02d", cal[0],cal[1],cal[2]);
 
           ret = create_folder(log_folder_name_temp);
           if (ret == -1) {
@@ -187,7 +188,7 @@ int roll_log_folder_name()
        * then do the rolling. */
       if (elapsed_sec_since_last_rolling >= (86400 * rolling_log_interval)) {
           // Folder name is 'YYYYMMDD'.
-          sprintf(log_folder_name_temp, "%4d%02d%02d/", cal[0],cal[1],cal[2]);
+          sprintf(log_folder_name_temp, "%4d%02d%02d", cal[0],cal[1],cal[2]);
 
           ret = create_folder(log_folder_name_temp);
           if (ret == -1) {
