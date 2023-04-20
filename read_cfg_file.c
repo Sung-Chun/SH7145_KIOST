@@ -45,7 +45,8 @@ extern int
       end_time,               /* 実験終了時間                                 */
       burst_total_num,        /* バーストモードでの送信回数*/
       burst_interval,         /* バースト間隔*/
-      rolling_log_interval;   /* Rolling log folder interval (number of days) */
+      rolling_log_day;        /* Day of rolling log folder */
+extern char rolling_log_day_or_week;   /* Rolling log folder day or week  */
 
 static char f[25][80],fin[80];
 
@@ -165,8 +166,11 @@ int read_cfg_file(char *cfg_file){
       if(i!=0){runlog(225);error_no=225;goto error1;}
       end_time=date2sec(time1,date1);/* 大域変数 2000.1.1からの経過秒 */
 
-      rolling_log_interval=atoi(f[22]); /* number of days */
-
+      rolling_log_day_or_week = f[22][0];  // 'D' or 'W'
+      if (f[22][1] == ' ')
+          rolling_log_day = atoi(f[22] + 2);
+      else
+          rolling_log_day = 1;
 
    #ifdef DEBUG
 //      printf("test_time =%s\x0d\x0a",f[19]);     

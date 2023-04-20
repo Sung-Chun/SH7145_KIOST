@@ -28,8 +28,8 @@ extern short *p_data;
 /* Rolling log folder interval (number of days)
  *
  * This global variable is set from the configuration file */
-int rolling_log_interval;
-static int last_sec_of_log_rolling = 0;
+char rolling_log_day_or_week;   /* Rolling log folder day('D') or week('W')  */
+int  rolling_log_day;           /* Day of rolling log folder */
 static char log_folder_name[12] = {'\0', };
 
 int save_raw_data(int ping_byou){
@@ -135,32 +135,56 @@ static int create_folder(char folder_name[])
       return 1;
 }
 
-int roll_log_folder_name()
+static void get_log_folder_name(char log_folder_name[])
 {
-      int   present_sec, cal[6];
-      int   elapsed_sec_since_last_rolling;
-      char  log_folder_name_temp[12];
-      int   ret;
+      int   cal[6], present_sec;
 
       /* Get the present time */
       present_sec = get_present_time();
       sec2date(present_sec, cal);
-      printf("[FOLDER ROLLING] present_time=  %4d %2d %2d  %2d:%02d:%02d\x0d\x0a",
-         cal[0],cal[1],cal[2],cal[3],cal[4],cal[5]);
+      printf("[FOLDER ROLLING] present_time=  %4d/%02d/%02d  %2d:%02d:%02d\x0d\x0a",
+         cal[0],cal[1],cal[2], cal[3],cal[4],cal[5]);
 
-      /* Configuration validity check */
-      if ((rolling_log_interval <= 0) || (rolling_log_interval > 180)) {
-          printf("[FOLDER ROLLING] 0 < rolling_log_interval value <= 180, but it is %d, \x0d\x0a",
-                 rolling_log_interval);
-          return -1;
+      /* day */
+      if (rolling_log_day_or_week == 'D') {
+          if ((rolling_log_day < 0) || (rolling_log_day > 28))
+              rolling_log_day = 1;
+
+          if (rolling_log_day != 0) {
+              if (cal[2] < rolling_log_day) {
+                  // If today is before the rolling_log_day,
+                  // then go to the day of the last month.
+                  cal[1]--;
+                  if (cal[1] == 0) {
+                      cal[1] = 12;
+                      cal[0]--;
+                  }
+              }
+              cal[2] = rolling_log_day;
+          }
+          // Folder name is 'YYYYMMDD'.
+          sprintf(log_folder_name, "%4d%02d%02d", cal[0],cal[1],cal[2]);
       }
+      /* week */
+      else {
+          // To be implemented (Below log folder name is temporarily set to today.)
+          sprintf(log_folder_name, "%4d%02d%02d", cal[0],cal[1],cal[2]);
+      }
+}
+
+int roll_log_folder_name()
+{
+      int   elapsed_sec_since_last_rolling;
+      char  log_folder_name_temp[12];
+      int   ret;
+
+      /* Get the log folder name as of the day */
+      get_log_folder_name(log_folder_name_temp);
 
       /* If no log_folder_name, then it's the first call.
        * Create new log folder */
       if (log_folder_name[0] == '\0') {
-          // Folder name is 'YYYYMMDD'.
-          sprintf(log_folder_name_temp, "%4d%02d%02d", cal[0],cal[1],cal[2]);
-
+          printf("[FOLDER ROLLING] Set the log folder name and create it if no exists.\x0d\x0a");
           ret = create_folder(log_folder_name_temp);
           if (ret == -1) {
               printf("[FOLDER ROLLING] Failed to create new folder, %s\x0d\x0a", log_folder_name_temp);
@@ -171,29 +195,15 @@ int roll_log_folder_name()
           else
               printf("[FOLDER ROLLING] Succeed to create new folder (first), %s\x0d\x0a", log_folder_name_temp);
 
-          last_sec_of_log_rolling = present_sec;
           strcpy(log_folder_name, log_folder_name_temp);
 
           return 0;
       }
 
-      elapsed_sec_since_last_rolling = present_sec - last_sec_of_log_rolling;
-      printf("[FOLDER ROLLING] elapsed sec %d\x0d\x0a", elapsed_sec_since_last_rolling);
-
-      if (elapsed_sec_since_last_rolling < 0) {
-          printf("[FOLDER ROLLING] elapsed_sec_since_last_rolling is less than zero\x0d\x0a");
-          elapsed_sec_since_last_rolling = 86400 * 5;
-      }
-
-      printf("[FOLDER ROLLING] check elapse time interval=%d\x0d\x0a", rolling_log_interval);
-
-      /* If elapsed seconds since the last rolling is greater than the rolling interval,
-       * then do the rolling. */
-      if (elapsed_sec_since_last_rolling >= (86400 * rolling_log_interval)) {
+      /* If the log folder name as of the day is different from the log_folder_name,
+       * then do the log folder rolling. */
+      if (strcmp(log_folder_name_temp, log_folder_name) != 0) {
           printf("[FOLDER ROLLING] Rolling log folder start\x0d\x0a");
-
-          // Folder name is 'YYYYMMDD'.
-          sprintf(log_folder_name_temp, "%4d%02d%02d", cal[0],cal[1],cal[2]);
 
           ret = create_folder(log_folder_name_temp);
           if (ret == -1) {
@@ -205,9 +215,10 @@ int roll_log_folder_name()
           else
               printf("[FOLDER ROLLING] Succeed to create new folder, %s\x0d\x0a", log_folder_name_temp);
 
-          last_sec_of_log_rolling = present_sec;
           strcpy(log_folder_name, log_folder_name_temp);
       }
+      else
+          printf("[FOLDER ROLLING] No change in the log folder name, %s\x0d\x0a", log_folder_name_temp);
 
       return 0;
 }
