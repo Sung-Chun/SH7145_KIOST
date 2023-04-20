@@ -135,9 +135,17 @@ static int create_folder(char folder_name[])
       return 1;
 }
 
+static int get_day_of_week(int y, int m, int d)
+{
+      static int t[] = {0, 3, 2, 5, 0, 3, 5, 1, 4, 6, 2, 4};
+      y -= m < 3;
+      return (y + y/4 - y/100 + y/400 + t[m-1] + d) % 7;
+}
+
 static void get_log_folder_name(char log_folder_name[])
 {
-      int   cal[6], present_sec;
+      int   cal[6], present_sec, log_time_sec;
+      int   day_of_week, days_to_trace_back;
 
       /* Get the present time */
       present_sec = get_present_time();
@@ -162,14 +170,22 @@ static void get_log_folder_name(char log_folder_name[])
               }
               cal[2] = rolling_log_day;
           }
-          // Folder name is 'YYYYMMDD'.
-          sprintf(log_folder_name, "%4d%02d%02d", cal[0],cal[1],cal[2]);
       }
       /* week */
       else {
-          // To be implemented (Below log folder name is temporarily set to today.)
-          sprintf(log_folder_name, "%4d%02d%02d", cal[0],cal[1],cal[2]);
+          if ((rolling_log_day < 0) || (rolling_log_day >= 7))
+              rolling_log_day = 1;
+
+          day_of_week = get_day_of_week(cal[0], cal[1], cal[2]);
+          if (rolling_log_day != day_of_week) {
+              days_to_trace_back = (day_of_week - rolling_log_day + 7) % 7;
+              log_time_sec = present_sec - (days_to_trace_back * 86400);
+              sec2date(log_time_sec, cal);
+          }
       }
+
+      // Folder name is 'YYYYMMDD'.
+      sprintf(log_folder_name, "%4d%02d%02d", cal[0],cal[1],cal[2]);
 }
 
 int roll_log_folder_name()
