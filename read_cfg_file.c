@@ -167,10 +167,22 @@ int read_cfg_file(char *cfg_file){
       end_time=date2sec(time1,date1);/* ëÂàÊïœêî 2000.1.1Ç©ÇÁÇÃåoâﬂïb */
 
       rolling_log_day_or_week = f[22][0];  // 'D' or 'W'
+      if ((rolling_log_day_or_week != 'D') && (rolling_log_day_or_week != 'W')) {
+          printf("\nLog folder rolling config error!!");
+          goto error1;
+      }
       if (f[22][1] == ' ')
           rolling_log_day = atoi(f[22] + 2);
       else
           rolling_log_day = 1;
+      if ((rolling_log_day_or_week == 'D') && ((rolling_log_day < 0) || (rolling_log_day > 28))) {
+          printf("\nLog folder rolling is set to D, but log day must be 0 ~ 28.");
+          goto error1;
+      }
+      if ((rolling_log_day_or_week == 'W') && ((rolling_log_day < 0) || (rolling_log_day > 6))) {
+          printf("\nLog folder rolling is set to W, but log day must be 0 ~ 6.");
+          goto error1;
+      }
 
    #ifdef DEBUG
 //      printf("test_time =%s\x0d\x0a",f[19]);     
