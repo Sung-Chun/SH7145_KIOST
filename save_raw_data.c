@@ -43,6 +43,7 @@ int save_raw_data(int ping_byou){
       sec2date(ping_byou,cal);
       memset(path2file,0,sizeof(path2file));
       strcpy(path2file,record_media);
+      strcat(path2file,"data/");
       strcat(path2file,log_folder_name);
       strcat(path2file,"/");
       strcat(path2file,file_name);
@@ -109,13 +110,15 @@ void make_file_name(int ping_byou){
       printf("file name=%s\x0d\x0a",file_name);
 }
 
-static int create_folder(char folder_name[])
+static int create_folder(int data, char folder_name[])
 {
       char  bf[40];
       int   fd;
 
       memset(bf, '\0', 40);
       strcpy(bf, record_media);
+      if (data)
+          strcat(bf, "data/");
       strcat(bf, folder_name);
 
       // Check if the folder name already exists.
@@ -201,7 +204,17 @@ int roll_log_folder_name()
        * Create new log folder */
       if (log_folder_name[0] == '\0') {
           printf("[FOLDER ROLLING] Set the log folder name and create it if no exists.\x0d\x0a");
-          ret = create_folder(log_folder_name_temp);
+          ret = create_folder(0, "data");
+          if (ret == -1) {
+              printf("[FOLDER ROLLING] Failed to create data folder\x0d\x0a");
+              return -1;
+          }
+          else if (ret == 1)
+              printf("[FOLDER ROLLING] data folder already exists(first)\x0d\x0a");
+          else
+              printf("[FOLDER ROLLING] Succeed to create data (first)\x0d\x0a");
+
+          ret = create_folder(1, log_folder_name_temp);
           if (ret == -1) {
               printf("[FOLDER ROLLING] Failed to create new folder, %s\x0d\x0a", log_folder_name_temp);
               return -1;
@@ -221,7 +234,7 @@ int roll_log_folder_name()
       if (strcmp(log_folder_name_temp, log_folder_name) != 0) {
           printf("[FOLDER ROLLING] Rolling log folder start\x0d\x0a");
 
-          ret = create_folder(log_folder_name_temp);
+          ret = create_folder(1, log_folder_name_temp);
           if (ret == -1) {
               printf("[FOLDER ROLLING] Failed to create new folder, %s\x0d\x0a", log_folder_name_temp);
               return -1;
