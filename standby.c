@@ -20,6 +20,8 @@ extern void sci_Open(int port,int speed);
 extern void OS_terminal_open(void); /* SH2_serial_10MHz.c */
 extern int  clock_pulse_generate(int freq,int flag);
 
+extern int move_raw_files_to_usb();
+
 /* **** declaration external(global) variable ***** */
 extern int  wakeup_interval,/* wakeup intervalÅiunit: sec) */
             t_freq_common;
@@ -68,6 +70,8 @@ void software_standby(int present_sec,int wakeup_sec){
 
       /* Change the log folder name if rolling interval time elapsed. */
       roll_log_folder_name();
+      /* Move raw files from record media to usb memory */
+      move_raw_files_to_usb();
 
       /* prepare entering to software standby mode */
       work=TCSR;

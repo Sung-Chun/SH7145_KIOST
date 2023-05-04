@@ -251,3 +251,150 @@ int roll_log_folder_name()
 
       return 0;
 }
+
+static int dir_list(const char* dir_name)
+{
+     int fd, n, len;
+     char full_name[80];
+     char fname[80], *ptr;
+     DirEnt ent;
+
+     fd = SetDirent(dir_name, &ent);
+     if(fd == -1) {
+          printf("Path not found\x0d\x0a");
+          return -1;
+     }
+     n = 0;
+     while(NextRecord(fd, &ent) == 0) {
+          ptr = ent.name;
+          len = get_longname(fd, fname, 79);
+          if(len > 0) ptr = fname;
+          if(ent.attr & 0x10) {
+               printf("[%s][%x]\x0d\x0a", ptr, ent.attr);
+          }
+          else {
+               printf("%s    (%d)[%x]\x0d\x0a", ptr, ent.length, ent.attr);
+          }
+          n++;
+     }
+     close(fd);
+     printf("\x0d\x0a");
+     return 0;
+}
+
+int get_list_raw_files()
+{
+     int tt[3];
+
+     tt[0] = get_present_time();
+     dir_list("/spc0/data");
+     tt[1] = get_present_time();
+     printf("[DIR_LIST] elapsed time = [%d]\x0d\x0a", tt[1] - tt[0]);
+     dir_list("/spc0/data/20230503");
+     tt[2] = get_present_time();
+     printf("[DIR_LIST] elapsed time = [%d]\x0d\x0a", tt[2] - tt[1]);
+
+}
+
+static int move_file(const char *src_dir, const char *src_filename, const char *dst_dir)
+{
+    int fd_src, fd_dst;
+    int ret;
+    char src_filepath[80], dst_filepath[80];
+
+    int tt[4];
+
+    tt[0] = get_present_time();
+
+    ret = create_folder(0, "data_bak");
+    if (ret == -1) {
+        printf("[MOVE FILE] Failed to create data folder, %s\x0d\x0a", dst_dir);
+        return -1;
+    }
+
+    sprintf(src_filepath, "%s/%s", src_dir, src_filename);
+    sprintf(dst_filepath, "%s/%s", dst_dir, src_filename);
+
+    ret = copy(src_filepath, dst_filepath);
+    if (ret != 0) {
+        printf("[MOVE FILE] Error in copying file (%d), %s\x0d\x0a", ret , src_filepath);
+        return ret;
+    }
+
+    ret = DeleteFile(src_filepath);
+    if (ret != -1)
+        printf("[MOVE FILE] %s is deleted!\x0d\x0a", src_filepath);
+
+    tt[1] = get_present_time();
+    printf("[MOVE FILE] Time (%d)\x0d\x0a", tt[1] - tt[0]);
+
+    return 0;
+}
+
+static int move_raw_files(const char *src_dir, const char *dst_dir, int num_to_move, int depth)
+{
+    int num_moved = 0;
+    int n_iter = 0;
+
+    int fd, len;
+    char full_name[80], dst_full_name[80];
+    char fname[32], *ptr;
+    DirEnt ent;
+
+    fd = SetDirent(src_dir, &ent);
+    if(fd == -1) {
+        printf("Path not found\x0d\x0a");
+        return -1;
+    }
+    num_moved = 0;
+    while(NextRecord(fd, &ent) == 0) {
+        if ((ent.attr & 0x10) && (ent.name[0] == '.'))
+            continue;
+
+        ptr = ent.name;
+        len = get_longname(fd, fname, 31);
+        if(len > 0) ptr = fname;
+
+        // depth == 1, then get into subfolder
+        if (depth == 1) {
+            if (ent.attr & 0x10) {
+                printf("** [%s][DIR]\x0d\x0a", ptr);
+
+                if ((num_to_move - num_moved) > 0) {
+                    sprintf(full_name, "%s/%s", src_dir, ptr);
+                    num_moved += move_raw_files(full_name, dst_dir, num_to_move - num_moved, 0);
+                }
+            }
+        }
+        else {
+            if ((ent.attr == 0x0) && (strlen(ptr) > 0) && (ent.length > 4096)) {  // No directory but files only.
+
+                sprintf(full_name, "%s/%s", src_dir, ptr);
+                sprintf(dst_full_name, "%s/%s", dst_dir, ptr);
+
+                printf("** src: [%s]  (%d),   dst: %s\x0d\x0a", full_name, ent.length, dst_full_name);
+                if (move_file(src_dir, ptr, dst_dir) == 0)
+                    num_moved++;
+            }
+            else
+                printf("    (ent.length)(%d)\x0d\x0a", ent.length);
+        }
+
+        if (num_moved >= num_to_move)
+            break;
+        if (++n_iter > 7)
+            break;
+    }
+    close(fd);
+    printf("*** num_moved = %d, n_iter = %d\x0d\x0a", num_moved, n_iter);
+    return num_moved;
+}
+
+int move_raw_files_to_usb()
+{
+    char path2file[40];
+
+    strcpy(path2file, record_media);
+    strcat(path2file, "data");
+    move_raw_files(path2file, "/spc0/data_bak", 5, 1);
+}
