@@ -252,50 +252,6 @@ int roll_log_folder_name()
       return 0;
 }
 
-static int dir_list(const char* dir_name)
-{
-     int fd, n, len;
-     char full_name[80];
-     char fname[80], *ptr;
-     DirEnt ent;
-
-     fd = SetDirent(dir_name, &ent);
-     if(fd == -1) {
-          printf("Path not found\x0d\x0a");
-          return -1;
-     }
-     n = 0;
-     while(NextRecord(fd, &ent) == 0) {
-          ptr = ent.name;
-          len = get_longname(fd, fname, 79);
-          if(len > 0) ptr = fname;
-          if(ent.attr & 0x10) {
-               printf("[%s][%x]\x0d\x0a", ptr, ent.attr);
-          }
-          else {
-               printf("%s    (%d)[%x]\x0d\x0a", ptr, ent.length, ent.attr);
-          }
-          n++;
-     }
-     close(fd);
-     printf("\x0d\x0a");
-     return 0;
-}
-
-int get_list_raw_files()
-{
-     int tt[3];
-
-     tt[0] = get_present_time();
-     dir_list("/spc0/data");
-     tt[1] = get_present_time();
-     printf("[DIR_LIST] elapsed time = [%d]\x0d\x0a", tt[1] - tt[0]);
-     dir_list("/spc0/data/20230503");
-     tt[2] = get_present_time();
-     printf("[DIR_LIST] elapsed time = [%d]\x0d\x0a", tt[2] - tt[1]);
-
-}
-
 static int move_file(const char *src_dir, const char *src_filename, const char *dst_dir)
 {
     int fd_src, fd_dst;
