@@ -47,12 +47,13 @@ extern int
       burst_interval,         /* バースト間隔*/
       rolling_log_day;        /* Day of rolling log folder */
 extern char rolling_log_day_or_week;   /* Rolling log folder day or week  */
+extern char backup_to_usb;             /* Backup raw files to usb memory */
 
 static char f[25][80],fin[80];
 
 /* Number of configurations
- * Currently, it is fixed to 23. */
-const int NUM_CONFIGS = 23;
+ * Currently, it is fixed to 24. */
+const int NUM_CONFIGS = 24;
 
 /***** read_cfg_file **********************************************************/
 /* 2008.5.                                                                    */
@@ -181,6 +182,12 @@ int read_cfg_file(char *cfg_file){
       }
       if ((rolling_log_day_or_week == 'W') && ((rolling_log_day < 0) || (rolling_log_day > 6))) {
           printf("\nLog folder rolling is set to W, but log day must be 0 ~ 6.");
+          goto error1;
+      }
+      backup_to_usb = f[23][0];  // 'Y' or 'N'
+      if ((backup_to_usb != 'Y') && (backup_to_usb != 'y')
+          && (backup_to_usb != 'N') && (backup_to_usb != 'n')) {
+          printf("\nbackup_to_usb must be Y, y, N or n, but you set \'%c\'", backup_to_usb);
           goto error1;
       }
 
