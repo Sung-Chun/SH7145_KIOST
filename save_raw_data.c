@@ -346,7 +346,7 @@ static int move_raw_files(const char *src_dir, const char *dst_dir, int num_to_m
     int num_moved = 0;
     int n_iter = 0;
 
-    int fd, len;
+    int fd, filename_len;
     char full_name[80], dst_full_name[80];
     char fname[32], *ptr;
     DirEnt ent;
@@ -362,8 +362,10 @@ static int move_raw_files(const char *src_dir, const char *dst_dir, int num_to_m
             continue;
 
         ptr = ent.name;
-        len = get_longname(fd, fname, 31);
-        if(len > 0) ptr = fname;
+        if(get_longname(fd, fname, 31) > 0) ptr = fname;
+
+        // length of name of the file (or folder)
+        filename_len = strlen(ptr);
 
         // depth == 1, then get into subfolder
         if (depth == 1) {
@@ -377,8 +379,14 @@ static int move_raw_files(const char *src_dir, const char *dst_dir, int num_to_m
                 }
             }
         }
-        else {
-            if ((ent.attr == 0x0) && (strlen(ptr) > 0) && (ent.length > 4096)) {  // No directory but files only.
+        // if depth == 0, then check files only.
+        else if ((ent.attr == 0x0) && (filename_len >= 5)) {
+#define FILESIZE_LIMIT_MIN	(4096 * 4)
+#define FILESIZE_LIMIT_MAX	(1024 * 512)
+
+            if ((strcmp(ptr + filename_len - 4, ".raw") == 0)
+                && (ent.length > FILESIZE_LIMIT_MIN)
+                && (ent.length < FILESIZE_LIMIT_MAX)) {
 
                 sprintf(full_name, "%s/%s", src_dir, ptr);
                 sprintf(dst_full_name, "%s/%s", dst_dir, ptr);
