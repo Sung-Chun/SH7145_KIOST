@@ -409,11 +409,11 @@ static int move_raw_files(const char *src_dir, const char *dst_dir, int num_to_m
     return num_moved;
 }
 
-int move_raw_files_to_usb()
+int move_raw_files_to_usb(int num_to_move)
 {
     char path2file[40];
 
     strcpy(path2file, record_media);
     strcat(path2file, "data");
-    move_raw_files(path2file, "/spc0/data_bak", 5, 1);
+    move_raw_files(path2file, "/spc0/data_bak", num_to_move, 1);
 }

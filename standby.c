@@ -20,7 +20,7 @@ extern void sci_Open(int port,int speed);
 extern void OS_terminal_open(void); /* SH2_serial_10MHz.c */
 extern int  clock_pulse_generate(int freq,int flag);
 
-extern int move_raw_files_to_usb();
+extern int move_raw_files_to_usb(int num_to_move);
 
 /* **** declaration external(global) variable ***** */
 extern int  wakeup_interval,/* wakeup intervalÅiunit: sec) */
@@ -66,13 +66,37 @@ void software_standby(int present_sec,int wakeup_sec){
          printf("Something wrong\x0d\x0a");
          return;
       }
-      printf("Enter software_standby\x0d\x0a");
 
       /* Change the log folder name if rolling interval time elapsed. */
       roll_log_folder_name();
       /* Move raw files from record media to usb memory */
-      move_raw_files_to_usb();
+      move_raw_files_to_usb(5);
 
+      /* Re-check the sleep time */
+      present_sec = get_present_time();
+      sleep_byou = wakeup_sec - present_sec;
+      if(sleep_byou <= 30){
+         printf("sleep time(sec)=%d\x0d\x0a",sleep_byou);
+         printf("sleep time is too small,\x0d\x0a");
+         printf(" then do not enter to sleep\x0d\x0a");
+         return;
+      }
+      if(sleep_byou < 255){
+         /* set the second value you want to sleep to 8bit_timer */
+         set_timer(sleep_byou);
+         alarm_byou = present_sec+read_timer();
+      }
+      else{
+         set_alarm_clock(wakeup_sec); /* setting month:date:hour:min */
+         alarm_byou = read_alarm_clock();
+      }
+      sleep_byou = alarm_byou - present_sec;
+      if((sleep_byou > wakeup_interval) || (sleep_byou < 0)) {
+         printf("Something wrong (after moving raw files)\x0d\x0a");
+         return;
+      }
+
+      printf("Enter software_standby\x0d\x0a");
       /* prepare entering to software standby mode */
       work=TCSR;
       TCSR_W = 0xa51e;  /* WDT */  
