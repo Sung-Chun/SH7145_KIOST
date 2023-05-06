@@ -282,9 +282,6 @@ static int mkdir_p(const char *full_path)
     // Create directory in higher position
     for (i = 2; i < num_slash; i++) {
         full_path_to_create[slash_pos[i]] = '\0';
-
-        printf("          !!!!  [%s]\x0d\x0a", full_path_to_create);
-
         fd = open(full_path_to_create, OptRead);
         if (fd == -1) {
             if (__mkdir(full_path_to_create) != 0)
@@ -318,7 +315,7 @@ static int move_file(const char *src_dir, const char *src_filename, const char *
 
     ret = mkdir_p(dst_dir);
     if (ret == -1) {
-        printf("[MOVE FILE] Failed to create data folder, %s\x0d\x0a", dst_dir);
+        printf("[MOVE RAW FILE] Failed to create data folder, %s\x0d\x0a", dst_dir);
         return -1;
     }
 
@@ -327,16 +324,16 @@ static int move_file(const char *src_dir, const char *src_filename, const char *
 
     ret = copy(src_filepath, dst_filepath);
     if (ret != 0) {
-        printf("[MOVE FILE] Error in copying file (%d), %s\x0d\x0a", ret , src_filepath);
+        printf("[MOVE RAW FILE] Error in copying file (%d), %s\x0d\x0a", ret , src_filepath);
         return ret;
     }
 
     ret = DeleteFile(src_filepath);
     if (ret != -1)
-        printf("[MOVE FILE] %s is deleted!\x0d\x0a", src_filepath);
+        printf("[MOVE RAW FILE] %s is deleted!\x0d\x0a", src_filepath);
 
     tt[1] = get_present_time();
-    printf("[MOVE FILE] Time (%d)\x0d\x0a", tt[1] - tt[0]);
+    printf("[MOVE RAW FILE] Elapsed time: %dsec\x0d\x0a", tt[1] - tt[0]);
 
     return 0;
 }
@@ -370,7 +367,7 @@ static int move_raw_files(const char *src_dir, const char *dst_dir, int num_to_m
         // depth == 1, then get into subfolder
         if (depth == 1) {
             if (ent.attr & 0x10) {
-                printf("** [%s][DIR]\x0d\x0a", ptr);
+                printf("[MOVE RAW FILE] Checking folder, [%s]\x0d\x0a", ptr);
 
                 if ((num_to_move - num_moved) > 0) {
                     sprintf(full_name, "%s/%s", src_dir, ptr);
@@ -391,12 +388,10 @@ static int move_raw_files(const char *src_dir, const char *dst_dir, int num_to_m
                 sprintf(full_name, "%s/%s", src_dir, ptr);
                 sprintf(dst_full_name, "%s/%s", dst_dir, ptr);
 
-                printf("** src: [%s]  (%d),   dst: %s\x0d\x0a", full_name, ent.length, dst_full_name);
+                printf("[MOVE RAW FILE] src: [%s] => dst: [%s]\x0d\x0a", full_name, dst_full_name);
                 if (move_file(src_dir, ptr, dst_dir) == 0)
                     num_moved++;
             }
-            else
-                printf("    (ent.length)(%d)\x0d\x0a", ent.length);
         }
 
         if (num_moved >= num_to_move)
@@ -405,7 +400,9 @@ static int move_raw_files(const char *src_dir, const char *dst_dir, int num_to_m
             break;
     }
     close(fd);
-    printf("*** num_moved = %d, n_iter = %d\x0d\x0a", num_moved, n_iter);
+
+    if (depth == 1)
+        printf("[MOVE RAW FILE] Num. files moved=%d\x0d\x0a", num_moved);
     return num_moved;
 }
 
