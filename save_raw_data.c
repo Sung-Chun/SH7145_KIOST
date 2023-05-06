@@ -252,6 +252,60 @@ int roll_log_folder_name()
       return 0;
 }
 
+static int mkdir_p(const char *full_path)
+{
+    int slash_pos[8];
+    int i, num_slash, leng;
+    int fd;
+    char full_path_to_create[80];
+
+    if (full_path[0] != '/')
+        return -1;
+
+    leng = strlen(full_path);
+    num_slash = 0;
+    for (i = 0; i < leng; i++) {
+        if (full_path[i] == '/')
+            slash_pos[num_slash++] = i;
+    }
+    // If the full_path has '/' at the end, then ignore it.
+    if (slash_pos[num_slash - 1] == leng)
+        num_slash--;
+    // Full path should be under media folder such as /spc0, /mmc0
+    if (num_slash < 2) {
+        printf("[ERROR] Number of depths to create directory is less than 2. [%s]\x0d\x0a", full_path);
+        return -1;
+    }
+
+    strcpy(full_path_to_create, full_path);
+
+    // Create directory in higher position
+    for (i = 2; i < num_slash; i++) {
+        full_path_to_create[slash_pos[i]] = '\0';
+
+        printf("          !!!!  [%s]\x0d\x0a", full_path_to_create);
+
+        fd = open(full_path_to_create, OptRead);
+        if (fd == -1) {
+            if (__mkdir(full_path_to_create) != 0)
+                return -1;
+        }
+        close(fd);
+
+        full_path_to_create[slash_pos[i]] = '/';
+    }
+
+    // Create directory specified as the function argument
+    fd = open(full_path_to_create, OptRead);
+    if (fd == -1) {
+        if (__mkdir(full_path_to_create) != 0)
+            return -1;
+    }
+    close(fd);
+
+    return 0;
+}
+
 static int move_file(const char *src_dir, const char *src_filename, const char *dst_dir)
 {
     int fd_src, fd_dst;
@@ -262,7 +316,7 @@ static int move_file(const char *src_dir, const char *src_filename, const char *
 
     tt[0] = get_present_time();
 
-    ret = create_folder(0, "data_bak");
+    ret = mkdir_p(dst_dir);
     if (ret == -1) {
         printf("[MOVE FILE] Failed to create data folder, %s\x0d\x0a", dst_dir);
         return -1;
@@ -318,7 +372,8 @@ static int move_raw_files(const char *src_dir, const char *dst_dir, int num_to_m
 
                 if ((num_to_move - num_moved) > 0) {
                     sprintf(full_name, "%s/%s", src_dir, ptr);
-                    num_moved += move_raw_files(full_name, dst_dir, num_to_move - num_moved, 0);
+                    sprintf(dst_full_name, "%s/%s", dst_dir, ptr);
+                    num_moved += move_raw_files(full_name, dst_full_name, num_to_move - num_moved, 0);
                 }
             }
         }
