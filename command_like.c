@@ -95,7 +95,6 @@ int copy(char *source, char *destination) {
       n = read(fdin, buf, COPYBLKSIZ);
       write(fdout, buf, n);
       if(++c > 16) {
-         putchar('.');
          c = 0;
       }
    } while(n == COPYBLKSIZ);
