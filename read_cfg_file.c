@@ -44,10 +44,7 @@ extern int
       start_time,             /* 実験開始時間                                 */
       end_time,               /* 実験終了時間                                 */
       burst_total_num,        /* バーストモードでの送信回数*/
-      burst_interval,         /* バースト間隔*/
-      rolling_log_day;        /* Day of rolling log folder */
-extern char rolling_log_day_or_week;   /* Rolling log folder day or week  */
-extern char backup_to_usb;             /* Backup raw files to usb memory */
+      burst_interval;         /* バースト間隔*/
 
 static char f[25][80],fin[80];
 
@@ -166,30 +163,6 @@ int read_cfg_file(char *cfg_file){
       i=date_time_set(fin,date1,time1,0);
       if(i!=0){runlog(225);error_no=225;goto error1;}
       end_time=date2sec(time1,date1);/* 大域変数 2000.1.1からの経過秒 */
-
-      rolling_log_day_or_week = f[22][0];  // 'D' or 'W'
-      if ((rolling_log_day_or_week != 'D') && (rolling_log_day_or_week != 'W')) {
-          printf("\nLog folder rolling config error!!");
-          goto error1;
-      }
-      if (f[22][1] == ' ')
-          rolling_log_day = atoi(f[22] + 2);
-      else
-          rolling_log_day = 1;
-      if ((rolling_log_day_or_week == 'D') && ((rolling_log_day < 0) || (rolling_log_day > 28))) {
-          printf("\nLog folder rolling is set to D, but log day must be 0 ~ 28.");
-          goto error1;
-      }
-      if ((rolling_log_day_or_week == 'W') && ((rolling_log_day < 0) || (rolling_log_day > 6))) {
-          printf("\nLog folder rolling is set to W, but log day must be 0 ~ 6.");
-          goto error1;
-      }
-      backup_to_usb = f[23][0];  // 'Y' or 'N'
-      if ((backup_to_usb != 'Y') && (backup_to_usb != 'y')
-          && (backup_to_usb != 'N') && (backup_to_usb != 'n')) {
-          printf("\nbackup_to_usb must be Y, y, N or n, but you set \'%c\'", backup_to_usb);
-          goto error1;
-      }
 
    #ifdef DEBUG
 //      printf("test_time =%s\x0d\x0a",f[19]);     

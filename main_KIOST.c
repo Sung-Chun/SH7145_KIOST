@@ -56,7 +56,7 @@ extern int  concurrent(int ping_byou);
 extern void sci_Restart(int port);
 extern int  CSAC_get_TOD(void);
 extern void runlog(int code);
-extern int roll_log_folder_name();
+extern int create_data_folder();
 /*******************************/
 
 int main(void){
@@ -147,8 +147,8 @@ int main(void){
    next1:      
       sleep(100);
 
-      /* Create new folder for logging */
-      roll_log_folder_name();
+      /* Create data folder for logging */
+      create_data_folder();
 
 loop0:
       /* **** PIC_counter_clear(20220921) by alive signal **** */

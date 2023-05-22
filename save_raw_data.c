@@ -25,13 +25,6 @@ extern int
 
 extern short *p_data;
 
-/* Rolling log folder interval (number of days)
- *
- * This global variable is set from the configuration file */
-char rolling_log_day_or_week;   /* Rolling log folder day('D') or week('W')  */
-int  rolling_log_day;           /* Day of rolling log folder */
-static char log_folder_name[12] = {'\0', };
-
 int save_raw_data(int ping_byou){
    int cal[6];
    int fd,ret,send_bytes;
@@ -44,8 +37,6 @@ int save_raw_data(int ping_byou){
       memset(path2file,0,sizeof(path2file));
       strcpy(path2file,record_media);
       strcat(path2file,"data/");
-      strcat(path2file,log_folder_name);
-      strcat(path2file,"/");
       strcat(path2file,file_name);
       strcat(path2file,".raw");
 
@@ -141,116 +132,21 @@ static int create_folder(int data, char folder_name[])
       return 1;
 }
 
-static int get_day_of_week(int y, int m, int d)
+int create_data_folder()
 {
-      static int t[] = {0, 3, 2, 5, 0, 3, 5, 1, 4, 6, 2, 4};
-      y -= m < 3;
-      return (y + y/4 - y/100 + y/400 + t[m-1] + d) % 7;
-}
-
-static void get_log_folder_name(char log_folder_name[])
-{
-      int   cal[6], present_sec, log_time_sec;
-      int   day_of_week, days_to_trace_back;
-
-      /* Get the present time */
-      present_sec = get_present_time();
-      sec2date(present_sec, cal);
-      printf("[FOLDER ROLLING] present_time=  %4d/%02d/%02d  %2d:%02d:%02d\x0d\x0a",
-         cal[0],cal[1],cal[2], cal[3],cal[4],cal[5]);
-
-      /* day */
-      if (rolling_log_day_or_week == 'D') {
-          if ((rolling_log_day < 0) || (rolling_log_day > 28))
-              rolling_log_day = 1;
-
-          if (rolling_log_day != 0) {
-              if (cal[2] < rolling_log_day) {
-                  // If today is before the rolling_log_day,
-                  // then go to the day of the last month.
-                  cal[1]--;
-                  if (cal[1] == 0) {
-                      cal[1] = 12;
-                      cal[0]--;
-                  }
-              }
-              cal[2] = rolling_log_day;
-          }
-      }
-      /* week */
-      else {
-          if ((rolling_log_day < 0) || (rolling_log_day >= 7))
-              rolling_log_day = 1;
-
-          day_of_week = get_day_of_week(cal[0], cal[1], cal[2]);
-          if (rolling_log_day != day_of_week) {
-              days_to_trace_back = (day_of_week - rolling_log_day + 7) % 7;
-              log_time_sec = present_sec - (days_to_trace_back * 86400);
-              sec2date(log_time_sec, cal);
-          }
-      }
-
-      // Folder name is 'YYYYMMDD'.
-      sprintf(log_folder_name, "%4d%02d%02d", cal[0],cal[1],cal[2]);
-}
-
-int roll_log_folder_name()
-{
-      int   elapsed_sec_since_last_rolling;
-      char  log_folder_name_temp[12];
       int   ret;
-
-      /* Get the log folder name as of the day */
-      get_log_folder_name(log_folder_name_temp);
 
       /* If no log_folder_name, then it's the first call.
        * Create new log folder */
-      if (log_folder_name[0] == '\0') {
-          printf("[FOLDER ROLLING] Set the log folder name and create it if no exists.\x0d\x0a");
-          ret = create_folder(0, "data");
-          if (ret == -1) {
-              printf("[FOLDER ROLLING] Failed to create data folder\x0d\x0a");
-              return -1;
-          }
-          else if (ret == 1)
-              printf("[FOLDER ROLLING] data folder already exists(first)\x0d\x0a");
-          else
-              printf("[FOLDER ROLLING] Succeed to create data (first)\x0d\x0a");
-
-          ret = create_folder(1, log_folder_name_temp);
-          if (ret == -1) {
-              printf("[FOLDER ROLLING] Failed to create new folder, %s\x0d\x0a", log_folder_name_temp);
-              return -1;
-          }
-          else if (ret == 1)
-              printf("[FOLDER ROLLING] Log folder already exists(first), %s\x0d\x0a", log_folder_name_temp);
-          else
-              printf("[FOLDER ROLLING] Succeed to create new folder (first), %s\x0d\x0a", log_folder_name_temp);
-
-          strcpy(log_folder_name, log_folder_name_temp);
-
-          return 0;
+      ret = create_folder(0, "data");
+      if (ret == -1) {
+          printf("[FOLDER ROLLING] Failed to create data folder\x0d\x0a");
+          return -1;
       }
-
-      /* If the log folder name as of the day is different from the log_folder_name,
-       * then do the log folder rolling. */
-      if (strcmp(log_folder_name_temp, log_folder_name) != 0) {
-          printf("[FOLDER ROLLING] Rolling log folder start\x0d\x0a");
-
-          ret = create_folder(1, log_folder_name_temp);
-          if (ret == -1) {
-              printf("[FOLDER ROLLING] Failed to create new folder, %s\x0d\x0a", log_folder_name_temp);
-              return -1;
-          }
-          else if (ret == 1)
-              printf("[FOLDER ROLLING] Log folder already exists, %s\x0d\x0a", log_folder_name_temp);
-          else
-              printf("[FOLDER ROLLING] Succeed to create new folder, %s\x0d\x0a", log_folder_name_temp);
-
-          strcpy(log_folder_name, log_folder_name_temp);
-      }
+      else if (ret == 1)
+          printf("[FOLDER ROLLING] data folder already exists\x0d\x0a");
       else
-          printf("[FOLDER ROLLING] No change in the log folder name, %s\x0d\x0a", log_folder_name_temp);
+          printf("[FOLDER ROLLING] Succeed to create data folder\x0d\x0a");
 
       return 0;
 }
