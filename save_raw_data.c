@@ -14,7 +14,7 @@ extern void runlog(int code);
 extern int sec2date(int byou,int cal[]);
 
 /* **** external(global) variable declaration ***** */
-extern char version[],my_station_name[],code_name[];
+extern char version[],my_station_name[],code_name[],str_latitude[],str_longitude[];
 extern char file_name[],record_media[];
 extern int
    my_station,code_repeat,mod_num,gps_operation,
@@ -62,7 +62,10 @@ int save_raw_data(int ping_byou){
       fprintf(fd,"repeat number= %d %d\x0d\x0a",code_repeat,superimpose_count);
       switch(gps_operation){
          case 0:fprintf(fd,"CSAC operation\x0d\x0a");break;
-         case 1:fprintf(fd,"GPS operation\x0d\x0a");break;
+         case 1:
+            fprintf(fd,"GPS operation\x0d\x0a");
+            fprintf(fd,"position= %s %s\x0d\x0a",str_latitude,str_longitude);
+            break;
       }
       fprintf(fd,"Ping time= %5d %2d %2d %2d %2d\x0d\x0a",cal[0],cal[1],cal[2],
               cal[3],cal[4]);
