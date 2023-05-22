@@ -89,7 +89,7 @@ e:\SH7145\SH7145_KIOST> make
   ...
 ```
 
-## Log 폴더 rolling 설정
+## <strike>Log 폴더 rolling 설정</strike>
 #### Log 폴더의 rolling은 tomo.cfg 파일 설정에 따라 "매일", "매월 d일", "매주 w요일" rolling이 되도록 설정을 할 수 있다.
 
 |설정 값|설명|비고|
@@ -110,7 +110,7 @@ e:\SH7145\SH7145_KIOST> make
 |연도 변경 시 폴더명 변경 1|D 28|OK|2023/1/3로 날짜 강제설정 후 동작 시 20221228 폴더 생성 확인|
 |연도 변경 시 폴더명 변경 2|W 3|OK|2023/1/3로 날짜 강제설정 후 동작 시 20221228 폴더 생성 확인|
 
-## USB 메모리로 이동할 지 여부를 설정
+## <strike>USB 메모리로 이동할 지 여부를 설정</strike>
 #### 매번 standby 진입 직전에 USB 메모리로 raw file들을 이동할 지 여부를 tomo.cfg 파일에서 설정할 수 있다.
 |설정 값|설명|
 |------|--------|
@@ -128,3 +128,8 @@ e:\SH7145\SH7145_KIOST> make
 |/mmc0/data 폴더에 아무 것도 없는 상태에서 테스트|Y|테스트 예정|-|
 |/mmc0/data 폴더에 1GB 쌓인 상태에서 테스트|Y|테스트 예정|-|
 |/mmc0/data 폴더에 2GB 쌓인 상태에서 테스트|Y|테스트 예정|-|
+
+## 2023-05-23: Revoke to no YYYYMMDD log folder and no backup to USB
+* 날짜 로그 폴더 (YYYYMMDD) 생성하는 로직을 삭제함
+* USB로 백업하는 로직을 삭제함
+* tomo.cfg 에서 날짜 및 USB 백업 설정 부분을 삭제함
